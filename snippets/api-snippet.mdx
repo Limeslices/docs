@@ -1,0 +1,6 @@
+The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.
+
+The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key.
+
+## Authentication
+You must include an API key in each request as a `Bearer token` in the `Authorization` header.

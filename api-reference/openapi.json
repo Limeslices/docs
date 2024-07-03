@@ -1,16 +1,13 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
+    "title": "Musicfy API Documentation",
+    "description": "Musicfy provides a public API that lets you utilize several features for your own AI voice cloning and music generation tools.\n\nConvert audio to a list of royalty free voices, or your own voices trained on [https://create.musicfy.lol](https://create.musicfy.lol)\n\n**What our API Provides**\n\n- Convert audio clips to different royalty free & parody voices.\n- Generate instrumentals with Text to Music AI.\n- Separate stems in an audio track.\n\n# Getting Started\n\n#### **To start using the Musicfy API, you need to -**\n\n- Sign up for a free Musicfy account [https://create.musicfy.lol](https://create.musicfy.lol)\n- Head over to [https://create.musicfy.lol/api-access](https://create.musicfy.lol/api-access) and enter payment details.\n- Create a new API token at [https://create.musicfy.lol/api-access/tokens](https://create.musicfy.lol/api-access/tokens.)\n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n- The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key.\n\n## Authentication\n\nYou must include an API key in each request as a Bearer token in the `Authorization` header.\n\n### Authentication error response\n\nIf an API key is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Pricing & Usage Limits\n\nBy default a billing quota cap of `$100/billing period` across all API endpoints is placed on each account. Invoices are billed every two weeks. If you have a higher quota need than this please reach out to us at [<b>team@musicfy.lol</b>](https://mailto:team@musicfy.lol), or join our [discord server](https://discord.gg/HNrbMZVayE) for faster response times.\n\nEach API response for generating audio will be billed at `$.07/minute` of generated audio. Only **successful** API calls will be billed. Any errors will not incur additional charges.\n\n### 403 response\n\nAn HTTP `403` response from our servers indicates there is a failed invoice payment. Until all invoices are paid there will be a temporary suspension of API Access.\n\n### **Need some help?**\n\nFor any questions reach out to us at [<b>team@musicfy.lol</b>](https://mailto:team@musicfy.lol) or join our [discord server](https://discord.gg/HNrbMZVayE).",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.musicfy.lol/v1/"
     }
   ],
   "security": [
@@ -19,176 +16,267 @@
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+    "/convert-voice": {
+      "post": {
+        "tags": [
+          "Voice Conversion"
+        ],
+        "summary": "Convert Voice",
+        "description": "Request to convert an audio clip to a different voice.\n\nMaximum file size is `50 MB`\n\n#### Form-Data Parameters\n\nEither `file_url` or `file` must be provided.\n\n- `voice_id` (String) - Required\n- `file_url` (String)\n- `file` (File)\n- `isolate_vocals` (Boolean)\n- Defaults to `False`\n- `pitch_shift` (Integer)\n- Value between -12 and 12\n- Defaults to `0`\n- `formant_shift` (Float)\n- Value between 0.1 and 2.0\n- Defaults to `1.0`\n\n#### Response\n\nReturns array of objects. File urls are short lived and will be deleted after 1 hour.\n\nIf `isolate_vocals` is set to `False` then only one `file_url` will be present in the array.",
+        "operationId": "convertVoice",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "formant_shift": {
+                    "type": "string",
+                    "example": "1.1"
+                  },
+                  "isolate_vocals": {
+                    "type": "string",
+                    "example": "true"
+                  },
+                  "pitch_shift": {
+                    "type": "string",
+                    "example": "0"
+                  },
+                  "remove_reverb": {
+                    "type": "string",
+                    "example": "false"
+                  },
+                  "voice_id": {
+                    "type": "string",
+                    "example": "c06b8712-2854-4170-b6f5-11b28817d8b3"
+                  }
+                }
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Plant"
+                    "type": "object",
+                    "properties": {
+                      "file_url": {
+                        "type": "string",
+                        "example": "https://audio.musicfy.lol/file_id"
+                      },
+                      "type": {
+                        "type": "string",
+                        "example": "vocals"
+                      }
+                    },
+                    "example": [
+                      {
+                        "file_url": "https://audio.musicfy.lol/file_id",
+                        "type": "vocals"
+                      },
+                      {
+                        "file_url": "https://audio.musicfy.lol/file_id",
+                        "type": "instrumental"
+                      },
+                      {
+                        "file_url": "https://audio.musicfy.lol/file_id",
+                        "type": "combined"
+                      }
+                    ]
                   }
                 }
               }
             }
-          },
-          "400": {
-            "description": "Unexpected error",
+          }
+        }
+      }
+    },
+    "/voices": {
+      "get": {
+        "description": "This endpoint retrieves a list of voices.\n\n## Request\n\n- Method: GET\n- Endpoint: `https://api.musicfy.lol/v1/voices`\n\n## Query Params\n\n- `voice_types`\n- Defaults to `instrument, parody, royalty_free`\n- Comma separated string.\n\n## Response\n\nThe response will contain an array of objects, where each object represents a voice with the following properties:\n\n- `id` (string): The unique identifier for the voice.\n- `artist` (string): The name of the artist associated with the voice or instrument.\n- `genre` (string | null): The genre of the voice.\n- `audioPreviewUrl` (string | null): The URL for the audio preview of the voice.\n- `gender` (string | null): The gender associated with the voice.\n- `thumbnail` (string | null): The URL for the thumbnail of the voice.\n- `type` (string): The type of the voice.",
+        "parameters": [
+          {
+            "name": "voice_types",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "instrument, parody, royalty_free"
+            },
+            "description": "Filter for which category of voices to include in response."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "headers": {
+              "Alt-Svc": {
+                "schema": {
+                  "type": "string",
+                  "example": "h3=\":443\"; ma=2592000"
+                }
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "type": "string",
+                  "example": "gzip"
+                }
+              },
+              "Date": {
+                "schema": {
+                  "type": "string",
+                  "example": "Sun, 26 May 2024 07:45:25 GMT"
+                }
+              },
+              "Transfer-Encoding": {
+                "schema": {
+                  "type": "string",
+                  "example": "chunked"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "artist": {
+                        "type": "string",
+                        "example": "Spongebob Squarepants"
+                      },
+                      "audioPreviewUrl": {
+                        "nullable": true,
+                        "example": null
+                      },
+                      "gender": {
+                        "nullable": true,
+                        "example": null
+                      },
+                      "genre": {
+                        "nullable": true,
+                        "example": null
+                      },
+                      "id": {
+                        "type": "string",
+                        "example": "72bc01b0-0b34-4d04-9217-3487d69185cc"
+                      },
+                      "thumbnail": {
+                        "type": "string",
+                        "example": "https://pub-1de51ae1e68144d78f7c582e1dda3ab1.r2.dev/SB-Standees-Spong-3_800x.webp"
+                      },
+                      "type": {
+                        "type": "string",
+                        "example": "parody"
+                      }
+                    },
+                    "example": [
+                      {
+                        "artist": "Spongebob Squarepants",
+                        "audioPreviewUrl": null,
+                        "gender": null,
+                        "genre": null,
+                        "id": "72bc01b0-0b34-4d04-9217-3487d69185cc",
+                        "thumbnail": "https://pub-1de51ae1e68144d78f7c582e1dda3ab1.r2.dev/SB-Standees-Spong-3_800x.webp",
+                        "type": "parody"
+                      },
+                      {
+                        "artist": "Plankton",
+                        "audioPreviewUrl": null,
+                        "gender": null,
+                        "genre": null,
+                        "id": "21f132b3-2d70-44a7-a297-4dab179fa56a",
+                        "thumbnail": "https://pub-1de51ae1e68144d78f7c582e1dda3ab1.r2.dev/Plankton.webp",
+                        "type": "parody"
+                      },
+                      {
+                        "artist": "Acoustic Guitar",
+                        "audioPreviewUrl": null,
+                        "gender": null,
+                        "genre": null,
+                        "id": "84a7fef1-c721-42b9-b3c5-35244bd5851b",
+                        "thumbnail": "https://pub-1de51ae1e68144d78f7c582e1dda3ab1.r2.dev/acoustic_guitar.jpg",
+                        "type": "instrument"
+                      },
+                      {
+                        "artist": "Breakbeats",
+                        "audioPreviewUrl": null,
+                        "gender": null,
+                        "genre": null,
+                        "id": "02991970-30ec-482e-b514-0093965718ff",
+                        "thumbnail": "https://pub-1de51ae1e68144d78f7c582e1dda3ab1.r2.dev/breakbeats.webp",
+                        "type": "instrument"
+                      }
+                    ]
+                  }
                 }
               }
             }
           }
         }
-      },
+      }
+    },
+    "/generate-music": {
       "post": {
-        "description": "Creates a new plant in the store",
+        "tags": [
+          "Voice Conversion"
+        ],
+        "summary": "Convert Voice",
+        "description": "Request to generate music with a given prompt.\n\n#### JSON Body Data\n\n- `prompt` (String) - Required\n- `duration` (Integer)\n- Specify length of generated music in seconds.\n- Defaults to 15 seconds.\n\n#### Response\n\nReturns array of objects. File urls are short lived and will be deleted after 1 hour.\n\nFor now only one object will be present in the array on successful requests.",
+        "operationId": "textToMusic",
         "requestBody": {
-          "description": "Plant to add to the store",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "example": "Electronic guitar"
+                  }
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "plant response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "file_url": {
+                        "type": "string",
+                        "example": "https://audio.musicfy.lol/file_id"
+                      },
+                      "type": {
+                        "type": "string",
+                        "example": "music"
+                      }
+                    },
+                    "example": {
+                      "file_url": "https://audio.musicfy.lol/file_id",
+                      "type": "music"
+                    }
+                  }
                 }
               }
             }
           }
         }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }
